@@ -28,6 +28,7 @@ function initUI() {
   setupViewNavigation();
   setupTimerControls();
   setupProjectModal();
+  setupBulkAddModal();
   setupSessionModal();
   setupSettingsUI();
 }
@@ -498,6 +499,124 @@ function closeProjectModal() {
   modal.classList.remove('show');
   modal.style.display = 'none';
   editingProjectId = null;
+}
+
+// Bulk Add Time Modal
+function setupBulkAddModal() {
+  const bulkAddBtn = document.getElementById('bulk-add-btn');
+  const modal = document.getElementById('bulk-add-modal');
+  const closeBtn = document.getElementById('bulk-add-modal-close');
+  const cancelBtn = document.getElementById('bulk-cancel-btn');
+  const saveBtn = document.getElementById('bulk-save-btn');
+  const projectSelect = document.getElementById('bulk-project');
+  const dateInput = document.getElementById('bulk-date');
+  const hoursInput = document.getElementById('bulk-hours');
+  const minutesInput = document.getElementById('bulk-minutes');
+  const notesInput = document.getElementById('bulk-notes');
+
+  bulkAddBtn.addEventListener('click', async () => {
+    // Populate project select
+    projectSelect.innerHTML = '';
+    const projects = await db.getProjects();
+    
+    if (projects.length === 0) {
+      alert('Please create a project first');
+      return;
+    }
+
+    projects.forEach(project => {
+      const option = document.createElement('option');
+      option.value = project.id;
+      option.textContent = project.name;
+      projectSelect.appendChild(option);
+    });
+
+    // Set date to today
+    const today = new Date();
+    dateInput.value = today.toISOString().split('T')[0];
+
+    // Reset duration
+    hoursInput.value = '0';
+    minutesInput.value = '0';
+    notesInput.value = '';
+
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+  });
+
+  closeBtn.addEventListener('click', closeBulkAddModal);
+  cancelBtn.addEventListener('click', closeBulkAddModal);
+
+  saveBtn.addEventListener('click', async () => {
+    const projectId = projectSelect.value;
+    const date = dateInput.value;
+    const hours = parseInt(hoursInput.value) || 0;
+    const minutes = parseInt(minutesInput.value) || 0;
+    const notes = notesInput.value.trim();
+
+    // Validate
+    if (!projectId) {
+      alert('Please select a project');
+      return;
+    }
+
+    if (!date) {
+      alert('Please select a date');
+      return;
+    }
+
+    if (hours === 0 && minutes === 0) {
+      alert('Please enter a duration');
+      return;
+    }
+
+    if (minutes >= 60) {
+      alert('Minutes must be less than 60');
+      return;
+    }
+
+    try {
+      // Create a session for the specified date
+      // Set time to 12:00 PM (noon) on the specified date
+      const dateObj = new Date(date);
+      dateObj.setHours(12, 0, 0, 0);
+
+      // Calculate duration in milliseconds
+      const durationMs = (hours * 60 + minutes) * 60 * 1000;
+
+      // Create start and end times
+      const startTime = new Date(dateObj.getTime() - durationMs / 2);
+      const endTime = new Date(dateObj.getTime() + durationMs / 2);
+
+      // Create the session
+      await db.createSession(projectId, startTime, endTime, notes);
+
+      // Reload projects and sessions
+      appState.projects = await db.getProjects();
+      appState.sessions = await db.getSessions();
+
+      renderProjects();
+      closeBulkAddModal();
+
+      const project = appState.projects.find(p => p.id === projectId);
+      alert(`Added ${hours}h ${minutes}m to "${project.name}" on ${date}`);
+    } catch (error) {
+      console.error('Failed to add time:', error);
+      alert('Failed to add time');
+    }
+  });
+
+  function closeBulkAddModal() {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+  }
+
+  // Click outside modal to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeBulkAddModal();
+    }
+  });
 }
 
 // History View

@@ -178,6 +178,12 @@ body {
   font-size: 1.3rem;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .projects-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
