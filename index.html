@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A simple offline-first time tracking PWA">
+  <meta name="theme-color" content="#4a90e2">
+  <title>Time Keeper - Project Time Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234a90e2' width='192' height='192'/><text x='96' y='130' font-size='120' font-weight='bold' fill='white' text-anchor='middle'>⏱</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Install prompt -->
+    <div id="install-prompt" class="install-prompt" style="display: none;">
+      <p>Install Time Keeper as an app?</p>
+      <button id="install-btn">Install</button>
+      <button id="dismiss-install">Dismiss</button>
+    </div>
+
+    <!-- Main navigation -->
+    <nav class="navbar">
+      <h1 class="app-title">⏱ Time Keeper</h1>
+      <div class="nav-buttons">
+        <button id="nav-timer-btn" class="nav-btn active" data-view="timer">Timer</button>
+        <button id="nav-history-btn" class="nav-btn" data-view="history">History</button>
+        <button id="nav-stats-btn" class="nav-btn" data-view="stats">Stats</button>
+        <button id="nav-settings-btn" class="nav-btn" data-view="settings">Settings</button>
+      </div>
+    </nav>
+
+    <!-- View container -->
+    <main class="view-container">
+      
+      <!-- TIMER VIEW -->
+      <div id="timer-view" class="view active">
+        <div class="timer-section">
+          <div class="active-timer-display">
+            <div class="timer-time" id="timer-display">00:00:00</div>
+            <div class="timer-project" id="timer-project-name">No project selected</div>
+          </div>
+          
+          <div class="timer-controls">
+            <button id="start-btn" class="btn btn-primary">Start</button>
+            <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+            <button id="stop-btn" class="btn btn-danger" disabled>Stop</button>
+          </div>
+        </div>
+
+        <div class="projects-section">
+          <div class="section-header">
+            <h2>Projects</h2>
+            <button id="new-project-btn" class="btn btn-small">+ New</button>
+          </div>
+          
+          <div id="projects-list" class="projects-list">
+            <!-- Projects will be rendered here -->
+          </div>
+        </div>
+
+        <!-- New/Edit Project Modal -->
+        <div id="project-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 id="project-modal-title">New Project</h2>
+              <button class="modal-close" id="project-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="project-name">Project Name</label>
+                <input type="text" id="project-name" placeholder="Enter project name" required>
+              </div>
+              <div class="form-group">
+                <label for="project-color">Color</label>
+                <div class="color-picker">
+                  <input type="color" id="project-color" value="#4a90e2">
+                  <div class="color-preview" id="color-preview" style="background-color: #4a90e2;"></div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="project-tags">Tags (comma-separated)</label>
+                <input type="text" id="project-tags" placeholder="e.g., frontend, urgent, client">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="project-save-btn" class="btn btn-primary">Save</button>
+              <button id="project-cancel-btn" class="btn btn-secondary">Cancel</button>
+              <button id="project-delete-btn" class="btn btn-danger" style="display: none;">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY VIEW -->
+      <div id="history-view" class="view">
+        <div class="history-section">
+          <div class="section-header">
+            <h2>Session History</h2>
+            <div class="history-filters">
+              <input type="date" id="history-date-filter" class="form-control">
+              <select id="history-project-filter" class="form-control">
+                <option value="">All Projects</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="sessions-list" class="sessions-list">
+            <!-- Sessions will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Edit Session Modal -->
+        <div id="session-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Edit Session</h2>
+              <button class="modal-close" id="session-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="session-project">Project</label>
+                <select id="session-project" required></select>
+              </div>
+              <div class="form-group">
+                <label for="session-start">Start Time</label>
+                <input type="datetime-local" id="session-start" required>
+              </div>
+              <div class="form-group">
+                <label for="session-end">End Time</label>
+                <input type="datetime-local" id="session-end" required>
+              </div>
+              <div class="form-group">
+                <label for="session-notes">Notes</label>
+                <textarea id="session-notes" placeholder="Add notes about this session" rows="3"></textarea>
+              </div>
+              <div class="form-group info-box">
+                <p><strong>Duration:</strong> <span id="session-duration">0 min</span></p>
+                <p><strong>Rounded Duration:</strong> <span id="session-rounded-duration">0 min</span></p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="session-save-btn" class="btn btn-primary">Save</button>
+              <button id="session-cancel-btn" class="btn btn-secondary">Cancel</button>
+              <button id="session-delete-btn" class="btn btn-danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS VIEW -->
+      <div id="stats-view" class="view">
+        <div class="stats-section">
+          <div class="section-header">
+            <h2>Project Statistics</h2>
+            <div class="stats-controls">
+              <label for="stats-period">Time Period:</label>
+              <select id="stats-period" class="form-control">
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+                <option value="all">All Time</option>
+                <option value="custom">Custom Range</option>
+              </select>
+              <div id="custom-date-range" style="display: none; margin-top: 10px;">
+                <input type="date" id="stats-start-date" class="form-control">
+                <input type="date" id="stats-end-date" class="form-control">
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stats-card">
+              <h3>Project Distribution</h3>
+              <div class="chart-container">
+                <canvas id="distribution-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <h3>Time Series</h3>
+              <div class="chart-container">
+                <canvas id="timeseries-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="stats-card full-width">
+              <h3>Project Summary</h3>
+              <table id="summary-table" class="summary-table">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Sessions</th>
+                    <th>Total Time</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-tbody">
+                  <!-- Will be populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS VIEW -->
+      <div id="settings-view" class="view">
+        <div class="settings-section">
+          <h2>Settings</h2>
+
+          <div class="settings-group">
+            <h3>Notifications & Reminders</h3>
+            <div class="setting-item">
+              <label>
+                <input type="checkbox" id="enable-reminders">
+                Enable Daily Reminders
+              </label>
+              <input type="time" id="reminder-time" class="form-control" value="09:00" disabled>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3>Idle Detection</h3>
+            <div class="setting-item">
+              <label>
+                <input type="checkbox" id="enable-idle-detection">
+                Enable Idle Detection
+              </label>
+              <div class="form-group">
+                <label for="idle-threshold">Idle Threshold (minutes)</label>
+                <input type="number" id="idle-threshold" min="30" max="480" value="180" class="form-control">
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3>Data Management</h3>
+            <div class="setting-item">
+              <button id="export-btn" class="btn btn-secondary">Export Data (JSON)</button>
+              <button id="import-btn" class="btn btn-secondary">Import Data (JSON)</button>
+              <input type="file" id="import-file" accept=".json" style="display: none;">
+              <button id="clear-btn" class="btn btn-danger">Clear All Data</button>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3>About</h3>
+            <p>Time Keeper v1.0</p>
+            <p>An offline-first progressive web app for tracking project time.</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="ui.js"></script>
+  <script src="stats.js"></script>
+  <script src="notifications.js"></script>
+</body>
+</html>
