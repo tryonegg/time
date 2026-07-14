@@ -10,14 +10,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initNotifications() {
-  // Request notification permission
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-
   // Start checking for idle and reminders
   startIdleDetection();
   startReminderCheck();
+}
+
+// Request notification permission (must be called from user gesture)
+async function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    try {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    } catch (error) {
+      console.error('Notification permission request failed:', error);
+      return false;
+    }
+  }
+  return Notification.permission === 'granted';
 }
 
 // Idle Detection

@@ -595,6 +595,15 @@ function setupSettingsUI() {
   enableRemindersCheckbox.addEventListener('change', async () => {
     appState.settings.enableReminders = enableRemindersCheckbox.checked;
     reminderTimeInput.disabled = !appState.settings.enableReminders;
+    
+    // Request notification permission if enabling reminders
+    if (appState.settings.enableReminders && 'Notification' in window) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        alert('Notifications permission denied. Reminders will not work.');
+      }
+    }
+    
     await appState.saveSettings();
   });
 
@@ -605,6 +614,15 @@ function setupSettingsUI() {
 
   enableIdleCheckbox.addEventListener('change', async () => {
     appState.settings.enableIdleDetection = enableIdleCheckbox.checked;
+    
+    // Request notification permission if enabling idle detection
+    if (appState.settings.enableIdleDetection && 'Notification' in window) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        alert('Notifications permission denied. Idle warnings will not work.');
+      }
+    }
+    
     await appState.saveSettings();
   });
 
