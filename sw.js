@@ -2,14 +2,14 @@
 
 const CACHE_NAME = 'time-keeper-v1';
 const FILES_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/ui.js',
-  '/stats.js',
-  '/notifications.js',
-  '/styles.css',
-  '/manifest.json'
+  '.',
+  './index.html',
+  './app.js',
+  './ui.js',
+  './stats.js',
+  './notifications.js',
+  './styles.css',
+  './manifest.json'
 ];
 
 // Install event
