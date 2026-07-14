@@ -13,16 +13,12 @@
 </head>
 <body>
   <div id="app">
-    <!-- Install prompt -->
-    <div id="install-prompt" class="install-prompt" style="display: none;">
-      <p>Install Time Keeper as an app?</p>
-      <button id="install-btn">Install</button>
-      <button id="dismiss-install">Dismiss</button>
-    </div>
-
     <!-- Main navigation -->
     <nav class="navbar">
-      <h1 class="app-title">⏱ Time Keeper</h1>
+      <div class="navbar-top">
+        <h1 class="app-title">⏱ Time Keeper</h1>
+        <button id="install-nav-btn" class="btn btn-install" style="display: none;">📥 Install App</button>
+      </div>
       <div class="nav-buttons">
         <button id="nav-timer-btn" class="nav-btn active" data-view="timer">Timer</button>
         <button id="nav-history-btn" class="nav-btn" data-view="history">History</button>

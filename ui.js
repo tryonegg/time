@@ -16,26 +16,30 @@ function initUI() {
 
 // Install prompt for PWA
 function setupInstallPrompt() {
+  const installNavBtn = document.getElementById('install-nav-btn');
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     
-    const installPrompt = document.getElementById('install-prompt');
-    installPrompt.style.display = 'flex';
+    // Show install button in navbar
+    installNavBtn.style.display = 'inline-block';
   });
 
-  document.getElementById('install-btn').addEventListener('click', async () => {
+  installNavBtn.addEventListener('click', async () => {
     if (deferredPrompt) {
+      installNavBtn.style.display = 'none';
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`User response: ${outcome}`);
       deferredPrompt = null;
-      document.getElementById('install-prompt').style.display = 'none';
     }
   });
 
-  document.getElementById('dismiss-install').addEventListener('click', () => {
-    document.getElementById('install-prompt').style.display = 'none';
+  // Hide install button if already installed
+  window.addEventListener('appinstalled', () => {
+    installNavBtn.style.display = 'none';
+    deferredPrompt = null;
   });
 }
 
