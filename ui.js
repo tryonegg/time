@@ -14,33 +14,137 @@ function initUI() {
   setupSettingsUI();
 }
 
-// Install prompt for PWA
+// Install banner for PWA
 function setupInstallPrompt() {
-  const installNavBtn = document.getElementById('install-nav-btn');
+  const installBanner = document.getElementById('install-banner');
+  const installBannerBtn = document.getElementById('install-banner-btn');
+  const dismissBannerBtn = document.getElementById('dismiss-install-banner-btn');
+  
+  let hasNativeSupport = false;
+
+  // Check if banner has been dismissed
+  function isBannerDismissed() {
+    return localStorage.getItem('install-banner-dismissed') === 'true';
+  }
+
+  // Show banner on page load if not dismissed and not installed
+  function showBannerIfNeeded() {
+    if (!isBannerDismissed()) {
+      installBanner.style.display = 'flex';
+    }
+  }
 
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    
-    // Show install button in navbar
-    installNavBtn.style.display = 'inline-block';
+    hasNativeSupport = true;
+    // Show banner when install is available
+    showBannerIfNeeded();
   });
 
-  installNavBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      installNavBtn.style.display = 'none';
+  installBannerBtn.addEventListener('click', async () => {
+    installBanner.style.display = 'none';
+    
+    if (deferredPrompt && hasNativeSupport) {
+      // Use native install prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`User response: ${outcome}`);
       deferredPrompt = null;
+      hasNativeSupport = false;
+    } else {
+      // Show browser-specific instructions in modal
+      showInstallInstructions();
     }
   });
 
-  // Hide install button if already installed
-  window.addEventListener('appinstalled', () => {
-    installNavBtn.style.display = 'none';
-    deferredPrompt = null;
+  function showInstallInstructions() {
+    const installModal = document.getElementById('install-modal');
+    const browserInstructions = document.getElementById('browser-instructions');
+    const userAgent = navigator.userAgent.toLowerCase();
+    let instructions = '';
+
+    if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+      // Safari
+      instructions = `
+        <ol style="margin-left: 1.5rem; line-height: 1.8;">
+          <li>Tap the <strong>Share</strong> button (square with arrow)</li>
+          <li>Scroll down and select <strong>Add to Home Screen</strong></li>
+          <li>Enter a name and tap <strong>Add</strong></li>
+        </ol>
+      `;
+    } else if (userAgent.includes('firefox')) {
+      // Firefox
+      instructions = `
+        <ol style="margin-left: 1.5rem; line-height: 1.8;">
+          <li>Tap the menu button (three dots)</li>
+          <li>Select <strong>Install</strong> or <strong>Add to Home Screen</strong></li>
+          <li>Confirm the installation</li>
+        </ol>
+      `;
+    } else if (userAgent.includes('chrome') || userAgent.includes('edge')) {
+      // Chrome/Edge
+      instructions = `
+        <p>The install button should appear automatically. If you don't see it:</p>
+        <ol style="margin-left: 1.5rem; line-height: 1.8;">
+          <li>Click the menu button (three dots)</li>
+          <li>Select <strong>Install app</strong> or <strong>Create shortcut</strong></li>
+        </ol>
+      `;
+    } else {
+      // Generic
+      instructions = `
+        <p>Look for an <strong>Install</strong>, <strong>Add to Home Screen</strong>, or similar option in your browser menu, or:</p>
+        <ol style="margin-left: 1.5rem; line-height: 1.8;">
+          <li>Open the browser menu</li>
+          <li>Look for an install or home screen option</li>
+          <li>Follow the prompts to add Time Keeper to your home screen</li>
+        </ol>
+      `;
+    }
+
+    browserInstructions.innerHTML = instructions;
+    installModal.classList.add('show');
+    installModal.style.display = 'flex';
+  }
+
+  dismissBannerBtn.addEventListener('click', () => {
+    installBanner.style.display = 'none';
+    localStorage.setItem('install-banner-dismissed', 'true');
   });
+
+  // Hide banner if already installed
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    hasNativeSupport = false;
+    installBanner.style.display = 'none';
+    localStorage.setItem('install-banner-dismissed', 'true');
+  });
+
+  // Click outside modal to close
+  const installModal = document.getElementById('install-modal');
+  const closeBtn = document.getElementById('install-modal-close');
+  const closeBtnFooter = document.getElementById('install-modal-close-btn');
+
+  closeBtn.addEventListener('click', () => {
+    installModal.classList.remove('show');
+    installModal.style.display = 'none';
+  });
+
+  closeBtnFooter.addEventListener('click', () => {
+    installModal.classList.remove('show');
+    installModal.style.display = 'none';
+  });
+
+  installModal.addEventListener('click', (e) => {
+    if (e.target === installModal) {
+      installModal.classList.remove('show');
+      installModal.style.display = 'none';
+    }
+  });
+
+  // Show banner on page load if not dismissed
+  showBannerIfNeeded();
 }
 
 // View navigation
@@ -576,6 +680,7 @@ function closeSessionModal() {
 
 // Settings View
 function setupSettingsUI() {
+  const showInstallBannerBtn = document.getElementById('show-install-banner-btn');
   const enableRemindersCheckbox = document.getElementById('enable-reminders');
   const reminderTimeInput = document.getElementById('reminder-time');
   const enableIdleCheckbox = document.getElementById('enable-idle-detection');
@@ -584,6 +689,13 @@ function setupSettingsUI() {
   const importBtn = document.getElementById('import-btn');
   const importFileInput = document.getElementById('import-file');
   const clearBtn = document.getElementById('clear-btn');
+
+  // Show install banner button
+  showInstallBannerBtn.addEventListener('click', () => {
+    const installBanner = document.getElementById('install-banner');
+    localStorage.removeItem('install-banner-dismissed');
+    installBanner.style.display = 'flex';
+  });
 
   // Load current settings
   enableRemindersCheckbox.checked = appState.settings.enableReminders;

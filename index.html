@@ -17,7 +17,6 @@
     <nav class="navbar">
       <div class="navbar-top">
         <h1 class="app-title">⏱ Time Keeper</h1>
-        <button id="install-nav-btn" class="btn btn-install" style="display: none;">📥 Install App</button>
       </div>
       <div class="nav-buttons">
         <button id="nav-timer-btn" class="nav-btn active" data-view="timer">Timer</button>
@@ -26,6 +25,33 @@
         <button id="nav-settings-btn" class="nav-btn" data-view="settings">Settings</button>
       </div>
     </nav>
+
+    <!-- Install Instructions Modal -->
+    <div id="install-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Install Time Keeper</h2>
+          <button class="modal-close" id="install-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Install Time Keeper as an app on your device for quick access and offline support.</p>
+          
+          <div id="install-instructions" style="margin-top: 1.5rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">How to Install:</h3>
+            <div id="browser-instructions"></div>
+          </div>
+          
+          <div style="margin-top: 1.5rem; padding: 1rem; background-color: #f0f0f0; border-radius: 6px;">
+            <p style="font-size: 0.9rem; margin: 0;"><strong>✓ Offline Access:</strong> Works without internet connection</p>
+            <p style="font-size: 0.9rem; margin: 0.5rem 0 0;"><strong>✓ Fast Loading:</strong> Opens instantly from home screen</p>
+            <p style="font-size: 0.9rem; margin: 0.5rem 0 0;"><strong>✓ All Your Data:</strong> Stored securely on your device</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="install-modal-close-btn" class="btn btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
 
     <!-- View container -->
     <main class="view-container">
@@ -231,6 +257,13 @@
           </div>
 
           <div class="settings-group">
+            <h3>Installation</h3>
+            <div class="setting-item">
+              <button id="show-install-banner-btn" class="btn btn-primary">Show Install Banner</button>
+            </div>
+          </div>
+
+          <div class="settings-group">
             <h3>Data Management</h3>
             <div class="setting-item">
               <button id="export-btn" class="btn btn-secondary">Export Data (JSON)</button>
@@ -249,6 +282,20 @@
       </div>
 
     </main>
+
+    <!-- Floating Install Banner -->
+    <div id="install-banner" class="install-banner" style="display: none;">
+      <div class="install-banner-content">
+        <div class="install-banner-text">
+          <strong>📥 Install Time Keeper</strong>
+          <p>Add this app to your home screen for quick access and offline support</p>
+        </div>
+        <div class="install-banner-actions">
+          <button id="install-banner-btn" class="btn btn-small btn-primary">Install</button>
+          <button id="dismiss-install-banner-btn" class="btn btn-small btn-secondary">Dismiss</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
