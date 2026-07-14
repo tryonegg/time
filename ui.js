@@ -4,6 +4,24 @@ let deferredPrompt;
 let editingProjectId = null;
 let editingSessionId = null;
 
+// Helper functions for timezone handling
+function formatDateTimeLocal(date) {
+  // Format a Date object as a datetime-local string in the user's timezone
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function parseDateTimeLocal(dateTimeString) {
+  // Parse a datetime-local string into a Date object in the user's timezone
+  // datetime-local format: "2026-07-14T10:30"
+  const date = new Date(dateTimeString);
+  return date;
+}
+
 // Initialize UI
 function initUI() {
   setupInstallPrompt();
@@ -530,8 +548,8 @@ async function renderHistory() {
       const minutes = Math.floor(duration / 60);
       const durationStr = `${minutes}m`;
 
-      const dateStr = startTime.toLocaleDateString();
-      const timeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dateStr = startTime.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+      const timeStr = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
       const item = document.createElement('div');
       item.className = 'session-item';
@@ -577,8 +595,8 @@ function setupSessionModal() {
 
   saveBtn.addEventListener('click', async () => {
     const projectId = document.getElementById('session-project').value;
-    const startTime = new Date(startInput.value);
-    const endTime = new Date(endInput.value);
+    const startTime = parseDateTimeLocal(startInput.value);
+    const endTime = parseDateTimeLocal(endInput.value);
     const notes = document.getElementById('session-notes').value;
 
     if (endTime <= startTime) {
@@ -662,8 +680,8 @@ async function openSessionModal(sessionId) {
   const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
   const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
   
-  startInput.value = startTime.toISOString().slice(0, 16);
-  endInput.value = endTime.toISOString().slice(0, 16);
+  startInput.value = formatDateTimeLocal(startTime);
+  endInput.value = formatDateTimeLocal(endTime);
   notesInput.value = session.notes || '';
 
   updateSessionDurationDisplay();
