@@ -69,6 +69,16 @@ body {
   cursor: pointer;
   font-weight: 500;
   transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
 }
 
 .nav-btn:hover {
