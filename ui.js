@@ -201,10 +201,20 @@ function setupTimerControls() {
   const pauseBtn = document.getElementById('pause-btn');
   const stopBtn = document.getElementById('stop-btn');
 
-  startBtn.addEventListener('click', () => {
+  startBtn.addEventListener('click', async () => {
+    // Auto-select project if only one exists
     if (!appState.activeProjectId) {
-      alert('Please select a project first');
-      return;
+      const projects = await db.getProjects();
+      if (projects.length === 1) {
+        appState.activeProjectId = projects[0].id;
+        renderProjects();
+      } else if (projects.length === 0) {
+        alert('Please create a project first');
+        return;
+      } else {
+        alert('Please select a project first');
+        return;
+      }
     }
     timer.start(appState.activeProjectId);
     updateTimerUI();

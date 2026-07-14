@@ -73,16 +73,16 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  span{
+    position: absolute;
+    left: -1000px;
+  }  
 }
 
 .nav-icon {
   width: 20px;
   height: 20px;
   display: inline-block;
-  span{
-    position: absolute;
-    left: -1000px;
-  }
 }
 
 .nav-btn:hover {
