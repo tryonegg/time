@@ -577,9 +577,9 @@ function setupBulkAddModal() {
 
     try {
       // Create a session for the specified date
-      // Set time to 12:00 PM (noon) on the specified date
-      const dateObj = new Date(date);
-      dateObj.setHours(12, 0, 0, 0);
+      // Parse date as local time (YYYY-MM-DD format)
+      const [year, month, day] = date.split('-').map(Number);
+      const dateObj = new Date(year, month - 1, day, 12, 0, 0, 0);
 
       // Calculate duration in milliseconds
       const durationMs = (hours * 60 + minutes) * 60 * 1000;
