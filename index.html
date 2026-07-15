@@ -76,7 +76,6 @@
             <h2>Projects</h2>
             <div class="header-buttons">
               <button id="new-project-btn" class="btn btn-small">+ New</button>
-              <button id="bulk-add-btn" class="btn btn-small">+ Bulk Add</button>
             </div>
           </div>
           
@@ -119,40 +118,27 @@
 
         <!-- Bulk Add Time Modal -->
         <div id="bulk-add-modal" class="modal" style="display: none;">
-          <div class="modal-content">
+          <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
               <h2>Add Past Time</h2>
               <button class="modal-close" id="bulk-add-modal-close">&times;</button>
             </div>
             <div class="modal-body">
-              <div class="form-group">
-                <label for="bulk-project">Project</label>
-                <select id="bulk-project" required></select>
-              </div>
-              <div class="form-group">
-                <label for="bulk-date">Date</label>
-                <input type="date" id="bulk-date" required>
-              </div>
-              <div class="form-group">
-                <label>Duration</label>
-                <div style="display: flex; gap: 1rem;">
-                  <div style="flex: 1;">
-                    <label for="bulk-hours" style="font-size: 0.9rem;">Hours</label>
-                    <input type="number" id="bulk-hours" min="0" max="24" value="0" class="form-control">
-                  </div>
-                  <div style="flex: 1;">
-                    <label for="bulk-minutes" style="font-size: 0.9rem;">Minutes</label>
-                    <input type="number" id="bulk-minutes" min="0" max="59" value="0" class="form-control">
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="bulk-notes">Notes (optional)</label>
-                <textarea id="bulk-notes" class="form-control" placeholder="Add notes about this time entry" style="min-height: 80px;"></textarea>
-              </div>
+              <table id="bulk-entries-table" style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+                <thead>
+                  <tr style="border-bottom: 2px solid #ddd;">
+                    <th style="text-align: left; padding: 0.5rem; font-weight: bold;">Project</th>
+                    <th style="text-align: left; padding: 0.5rem; font-weight: bold;">Date</th>
+                    <th style="text-align: left; padding: 0.5rem; font-weight: bold;">Duration</th>
+                    <th style="text-align: center; padding: 0.5rem; width: 40px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="bulk-entries-body"></tbody>
+              </table>
+              <button id="bulk-add-entry-btn" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem;">+ Add Entry</button>
             </div>
             <div class="modal-footer">
-              <button id="bulk-save-btn" class="btn btn-primary">Add Time</button>
+              <button id="bulk-save-btn" class="btn btn-primary">Save All</button>
               <button id="bulk-cancel-btn" class="btn btn-secondary">Cancel</button>
             </div>
           </div>
@@ -164,7 +150,11 @@
         <div class="history-section">
           <div class="section-header">
             <h2>Session History</h2>
-            <div class="history-filters">
+            <div class="header-buttons">
+              <button id="bulk-add-btn" class="btn btn-small">+ Bulk Add</button>
+            </div>
+          </div>
+          <div class="history-filters">
               <input type="date" id="history-date-filter" class="form-control">
               <select id="history-project-filter" class="form-control">
                 <option value="">All Projects</option>

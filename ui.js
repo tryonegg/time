@@ -502,44 +502,60 @@ function closeProjectModal() {
 }
 
 // Bulk Add Time Modal
+// Parse flexible duration input (e.g., "90 min", "1h 30m", "90", "1.5h")
+function parseDuration(input) {
+  if (!input || input.trim() === '') return null;
+  
+  const normalized = input.toLowerCase().trim();
+  let totalMinutes = 0;
+
+  // Match patterns like "1h 30m", "1.5h", "90 min", "90", etc.
+  const hourPattern = /(\d+(?:\.\d+)?)\s*h/;
+  const minPattern = /(\d+(?:\.\d+)?)\s*m(?:in)?/;
+
+  const hourMatch = normalized.match(hourPattern);
+  if (hourMatch) {
+    totalMinutes += parseFloat(hourMatch[1]) * 60;
+  }
+
+  const minMatch = normalized.match(minPattern);
+  if (minMatch) {
+    totalMinutes += parseFloat(minMatch[1]);
+  }
+
+  // If no pattern matched, try to parse as plain number (minutes)
+  if (totalMinutes === 0) {
+    const num = parseFloat(normalized);
+    if (!isNaN(num) && num > 0) {
+      totalMinutes = num;
+    }
+  }
+
+  return totalMinutes > 0 ? Math.round(totalMinutes) : null;
+}
+
 function setupBulkAddModal() {
   const bulkAddBtn = document.getElementById('bulk-add-btn');
   const modal = document.getElementById('bulk-add-modal');
   const closeBtn = document.getElementById('bulk-add-modal-close');
   const cancelBtn = document.getElementById('bulk-cancel-btn');
   const saveBtn = document.getElementById('bulk-save-btn');
-  const projectSelect = document.getElementById('bulk-project');
-  const dateInput = document.getElementById('bulk-date');
-  const hoursInput = document.getElementById('bulk-hours');
-  const minutesInput = document.getElementById('bulk-minutes');
-  const notesInput = document.getElementById('bulk-notes');
+  const addEntryBtn = document.getElementById('bulk-add-entry-btn');
+  const entriesBody = document.getElementById('bulk-entries-body');
+
+  let entries = [];
+  let projects = [];
 
   bulkAddBtn.addEventListener('click', async () => {
-    // Populate project select
-    projectSelect.innerHTML = '';
-    const projects = await db.getProjects();
+    projects = await db.getProjects();
     
     if (projects.length === 0) {
       alert('Please create a project first');
       return;
     }
 
-    projects.forEach(project => {
-      const option = document.createElement('option');
-      option.value = project.id;
-      option.textContent = project.name;
-      projectSelect.appendChild(option);
-    });
-
-    // Set date to today
-    const today = new Date();
-    dateInput.value = today.toISOString().split('T')[0];
-
-    // Reset duration
-    hoursInput.value = '0';
-    minutesInput.value = '0';
-    notesInput.value = '';
-
+    entries = [];
+    renderEntries();
     modal.classList.add('show');
     modal.style.display = 'flex';
   });
@@ -547,64 +563,132 @@ function setupBulkAddModal() {
   closeBtn.addEventListener('click', closeBulkAddModal);
   cancelBtn.addEventListener('click', closeBulkAddModal);
 
+  addEntryBtn.addEventListener('click', () => {
+    const today = new Date().toISOString().split('T')[0];
+    entries.push({
+      projectId: projects[0].id,
+      date: today,
+      duration: ''
+    });
+    renderEntries();
+  });
+
   saveBtn.addEventListener('click', async () => {
-    const projectId = projectSelect.value;
-    const date = dateInput.value;
-    const hours = parseInt(hoursInput.value) || 0;
-    const minutes = parseInt(minutesInput.value) || 0;
-    const notes = notesInput.value.trim();
-
-    // Validate
-    if (!projectId) {
-      alert('Please select a project');
-      return;
-    }
-
-    if (!date) {
-      alert('Please select a date');
-      return;
-    }
-
-    if (hours === 0 && minutes === 0) {
-      alert('Please enter a duration');
-      return;
-    }
-
-    if (minutes >= 60) {
-      alert('Minutes must be less than 60');
-      return;
+    // Validate all entries
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const durationMinutes = parseDuration(entry.duration);
+      
+      if (!entry.projectId) {
+        alert(`Entry ${i + 1}: Please select a project`);
+        return;
+      }
+      
+      if (!entry.date) {
+        alert(`Entry ${i + 1}: Please select a date`);
+        return;
+      }
+      
+      if (!durationMinutes || durationMinutes <= 0) {
+        alert(`Entry ${i + 1}: Please enter a valid duration (e.g., "90 min", "1h 30m")`);
+        return;
+      }
     }
 
     try {
-      // Create a session for the specified date
-      // Parse date as local time (YYYY-MM-DD format)
-      const [year, month, day] = date.split('-').map(Number);
-      const dateObj = new Date(year, month - 1, day, 12, 0, 0, 0);
+      // Create all sessions
+      for (const entry of entries) {
+        const durationMinutes = parseDuration(entry.duration);
+        const [year, month, day] = entry.date.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day, 12, 0, 0, 0);
+        
+        const durationMs = durationMinutes * 60 * 1000;
+        const startTime = new Date(dateObj.getTime() - durationMs / 2);
+        const endTime = new Date(dateObj.getTime() + durationMs / 2);
+        
+        await db.createSession(entry.projectId, startTime, endTime, '');
+      }
 
-      // Calculate duration in milliseconds
-      const durationMs = (hours * 60 + minutes) * 60 * 1000;
-
-      // Create start and end times
-      const startTime = new Date(dateObj.getTime() - durationMs / 2);
-      const endTime = new Date(dateObj.getTime() + durationMs / 2);
-
-      // Create the session
-      await db.createSession(projectId, startTime, endTime, notes);
-
-      // Reload projects and sessions
+      // Reload and close
       appState.projects = await db.getProjects();
       appState.sessions = await db.getSessions();
-
       renderProjects();
+      renderHistory();
       closeBulkAddModal();
-
-      const project = appState.projects.find(p => p.id === projectId);
-      alert(`Added ${hours}h ${minutes}m to "${project.name}" on ${date}`);
     } catch (error) {
-      console.error('Failed to add time:', error);
-      alert('Failed to add time');
+      console.error('Failed to add time entries:', error);
+      alert('Failed to add time entries');
     }
   });
+
+  function renderEntries() {
+    entriesBody.innerHTML = '';
+    entries.forEach((entry, index) => {
+      const row = document.createElement('tr');
+      row.style.borderBottom = '1px solid #eee';
+      
+      const projectCell = document.createElement('td');
+      projectCell.style.padding = '0.5rem';
+      const projectSelect = document.createElement('select');
+      projectSelect.style.width = '100%';
+      projects.forEach(proj => {
+        const option = document.createElement('option');
+        option.value = proj.id;
+        option.textContent = proj.name;
+        if (proj.id === entry.projectId) option.selected = true;
+        projectSelect.appendChild(option);
+      });
+      projectSelect.addEventListener('change', (e) => {
+        entries[index].projectId = e.target.value;
+      });
+      projectCell.appendChild(projectSelect);
+      row.appendChild(projectCell);
+      
+      const dateCell = document.createElement('td');
+      dateCell.style.padding = '0.5rem';
+      const dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.value = entry.date;
+      dateInput.style.width = '100%';
+      dateInput.addEventListener('change', (e) => {
+        entries[index].date = e.target.value;
+      });
+      dateCell.appendChild(dateInput);
+      row.appendChild(dateCell);
+      
+      const durationCell = document.createElement('td');
+      durationCell.style.padding = '0.5rem';
+      const durationInput = document.createElement('input');
+      durationInput.type = 'text';
+      durationInput.placeholder = 'e.g., 90 min or 1h 30m';
+      durationInput.value = entry.duration;
+      durationInput.style.width = '100%';
+      durationInput.addEventListener('change', (e) => {
+        entries[index].duration = e.target.value;
+      });
+      durationCell.appendChild(durationInput);
+      row.appendChild(durationCell);
+      
+      const actionCell = document.createElement('td');
+      actionCell.style.padding = '0.5rem';
+      actionCell.style.textAlign = 'center';
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '✕';
+      deleteBtn.style.background = 'none';
+      deleteBtn.style.border = 'none';
+      deleteBtn.style.cursor = 'pointer';
+      deleteBtn.style.fontSize = '1.2rem';
+      deleteBtn.style.color = '#e74c3c';
+      deleteBtn.addEventListener('click', () => {
+        entries.splice(index, 1);
+        renderEntries();
+      });
+      actionCell.appendChild(deleteBtn);
+      row.appendChild(actionCell);
+      
+      entriesBody.appendChild(row);
+    });
+  }
 
   function closeBulkAddModal() {
     modal.classList.remove('show');
